@@ -4,12 +4,14 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+@Slf4j
 @RequiredArgsConstructor
 // 로그인 요청을 처리하는 커스텀 필터 (Form 로그인 방식은 사용하지 않음)
 public class LoginFilter extends UsernamePasswordAuthenticationFilter { // 이 필터는 기본적으로 "/login" 경로에 대한 POST 요청을 감지
@@ -46,13 +48,13 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter { // 이 �
     // 매개변수에 filterchain : 인증 성공 후, 다음 필터로 요청을 넘길 수 있게 하기 위한 매개변수 (인증 성공 후에도 다른 필터에서 CORS 설정, 리스폰스 헤더 추가 등이 필요할 수 있음)
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain, Authentication authentication) {
-
+        log.info("로그인 성공");
     }
 
     // 로그인 실패 시 실행하는 메소드
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) {
-
+        log.info("로그인 실패 : {}", failed.getMessage());
     }
 
 }
