@@ -1,5 +1,6 @@
 package com.example.springjwt.jwt;
 
+import com.example.springjwt.dto.CustomUserDetails;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -9,7 +10,11 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import java.util.Collection;
+import java.util.Iterator;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -17,6 +22,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class LoginFilter extends UsernamePasswordAuthenticationFilter { // 이 필터는 기본적으로 "/login" 경로에 대한 POST 요청을 감지
 
     private final AuthenticationManager authenticationManager;
+    // JWTUtil 주입
+    private final JWTUtil jwtUtil;
 
     @Override
     public Authentication attemptAuthentication( // 로그인 시도가 발생하면 실행되는 메소드
@@ -48,13 +55,27 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter { // 이 �
     // 매개변수에 filterchain : 인증 성공 후, 다음 필터로 요청을 넘길 수 있게 하기 위한 매개변수 (인증 성공 후에도 다른 필터에서 CORS 설정, 리스폰스 헤더 추가 등이 필요할 수 있음)
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain, Authentication authentication) {
-        log.info("로그인 성공");
+        // Spring Security에서 Authentication 객체는 로그인 인증 후 사용자 정보를 담고 있음. 이 객체에서 사용자의 정보를 getPrincipal() 메소드를 통해 꺼낼 수 있고 이는 UserDetails 타입임
+        // 하지만 현재 실습에서 사용자 정보를 담는 클래스로 CustomUserDetails를 만들었기 때문에 형변환해서 사용
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        // 로그인에 성공한 사용자 정보를 활용해서 이후 작업
+        String username = customUserDetails.getUsername();
+
+        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities(); // 권한 목록 가져오기
+        Iterator<? extends GrantedAuthority> iterator = authorities.iterator(); // 반복자 생성
+        GrantedAuthority auth = iterator.next(); // 첫 번째 권한 가져오기
+
+        String role = auth.getAuthority(); // 권한 이름 추출
+
+        String token = jwtUtil.createJwt(username, role, 60*60*10L); // JWT 생성 (10시간 유효)
+
+        response.addHeader("Authorization", "Bearer " + token); // 응답 헤더에 JWT 추가
     }
 
     // 로그인 실패 시 실행하는 메소드
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) {
-        log.info("로그인 실패 : {}", failed.getMessage());
+        response.setStatus(401);
     }
 
 }
