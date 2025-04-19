@@ -1,5 +1,6 @@
 package com.example.springjwt.config;
 
+import com.example.springjwt.jwt.JWTFilter;
 import com.example.springjwt.jwt.JWTUtil;
 import com.example.springjwt.jwt.LoginFilter;
 import lombok.RequiredArgsConstructor;
@@ -57,6 +58,7 @@ public class SecurityConfig {
                 .requestMatchers("/admin").hasRole("ADMIN")
                 .anyRequest().authenticated());
 
+        http.addFilterBefore(new JWTFilter(jwtUtil), LoginFilter.class);
 
         // UsernamePasswordAuthenticationFilter를 대체할 커스텀 필터(LoginFilter)를 등록하기 위해 addFilterAt() 사용
         // LoginFilter는 인증 처리를 위해 AuthenticationManager를 사용하며, 이 매니저는 사용자 인증을 담당하는 객체
