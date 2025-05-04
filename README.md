@@ -1,11 +1,7 @@
 # Spring Security JWT
+![image](https://github.com/user-attachments/assets/e8b868d3-ef02-4147-b4fd-fc44a822c0b1)
 
-| 구분          | basic 브랜치                     | advanced 브랜치                      |
-|---------------|---------------------------------|-------------------------------------|
-| **토큰 구조**  | 단일 JWT 토큰                    | Access, Refresh Token 분리            |
-| **토큰 관리**  | 분리하지 않음                    | Redis에 Refresh Token 저장           |
-| **토큰 만료**  | 재로그인 필요, 자동 갱신 없음      | Refresh Token으로 재발급 가능        |
-| **로그아웃**   | 없음                             | Refresh Token 삭제, Blacklist 처리    |
+---
 
 ### 1. 회원가입 - POST /join
 1. `JoinController`가 요청을 받고 DTO로 파싱
@@ -28,6 +24,15 @@
    - 세션처럼 동작하지만, 실제 세션 저장은 하지 않음 (서버에 상태 정보 저장 X) 
 5. 이후 컨트롤러에서 인증된 사용자로 인가 처리 가능
 
+---
+
 #### 📌 현재 실습에서는 `Access Token`과 `Refresh Token`을 분리하지 않고, **단일 JWT 토큰 구조**로만 인증을 처리함
 - 따라서 토큰이 만료되면 재로그인이 필요하며, 자동 갱신 로직은 없음
 - 다중 토큰 방식(Access/Refresh)은 [advanced 브랜치](https://github.com/bum0w0/spring-security-jwt-study/tree/advanced)에서 진행
+
+| 구분          | basic 브랜치                     | advanced 브랜치                      |
+|---------------|---------------------------------|-------------------------------------|
+| **토큰 구조**  | 단일 JWT 토큰                    | Access, Refresh Token 분리            |
+| **토큰 관리**  | 분리하지 않음                    | Redis에 Refresh Token 저장           |
+| **토큰 만료**  | 재로그인 필요, 자동 갱신 없음      | Refresh Token으로 재발급 가능        |
+| **로그아웃**   | 없음                             | Refresh Token 삭제, Blacklist 처리    |
