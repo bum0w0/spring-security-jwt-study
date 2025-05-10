@@ -62,13 +62,27 @@ public class ReissueController {
         String username = jwtUtil.getUsername(refresh);
         String role = jwtUtil.getRole(refresh);
 
-        //make new JWT
+        // AccessToken과 RefreshToken 재생성 (생명 주기: Access - 10분, Refresh - 24시간)
         String newAccess = jwtUtil.createJwt("access", username, role, 600000L);
+        String newRefresh = jwtUtil.createJwt("refresh", username, role, 86400000L);
 
-        //response
-        response.setHeader("access", newAccess);
+        // AccessToken은 응답 헤더에 담아서 클라이언트에게 전달
+        response.addHeader("Authorization", "Bearer " + newAccess);
+        // RefreshToken은 쿠키에 저장
+        response.addCookie(createCookie("refresh", newRefresh));
 
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    private Cookie createCookie(String key, String value) {
+
+        Cookie cookie = new Cookie(key, value);
+        cookie.setMaxAge(24*60*60);
+        //cookie.setSecure(true);
+        //cookie.setPath("/");
+        cookie.setHttpOnly(true);
+
+        return cookie;
     }
 
 }
