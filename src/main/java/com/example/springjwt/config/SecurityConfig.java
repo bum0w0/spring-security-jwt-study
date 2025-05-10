@@ -3,6 +3,7 @@ package com.example.springjwt.config;
 import com.example.springjwt.jwt.JWTFilter;
 import com.example.springjwt.jwt.JWTUtil;
 import com.example.springjwt.jwt.LoginFilter;
+import com.example.springjwt.repository.RefreshRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -30,6 +31,8 @@ public class SecurityConfig {
     private final AuthenticationConfiguration authenticationConfiguration;
     // JWTUtil 주입
     private final JWTUtil jwtUtil;
+
+    private final RefreshRepository refreshRepository;
 
     // AuthenticationManager Bean 등록
     @Bean
@@ -88,7 +91,7 @@ public class SecurityConfig {
         // UsernamePasswordAuthenticationFilter를 대체할 커스텀 필터(LoginFilter)를 등록하기 위해 addFilterAt() 사용
         // LoginFilter는 인증 처리를 위해 AuthenticationManager를 사용하며, 이 매니저는 사용자 인증을 담당하는 객체
         // AuthenticationManager는 UserDetailsService와 PasswordEncoder 등 인증에 필요한 설정을 포함하고 있으므로, 이를 생성자에 전달하여 필터가 인증을 처리할 수 있도록 설정
-        http.addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, refreshRepository), UsernamePasswordAuthenticationFilter.class);
 
         // 세션 설정
         http.sessionManagement((session) -> session

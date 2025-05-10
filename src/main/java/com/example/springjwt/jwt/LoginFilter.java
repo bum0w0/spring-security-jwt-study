@@ -1,6 +1,8 @@
 package com.example.springjwt.jwt;
 
 import com.example.springjwt.dto.CustomUserDetails;
+import com.example.springjwt.entity.RefreshEntity;
+import com.example.springjwt.repository.RefreshRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,6 +18,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.Iterator;
 
 @Slf4j
@@ -26,6 +29,8 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter { // 이 �
     private final AuthenticationManager authenticationManager;
     // JWTUtil 주입
     private final JWTUtil jwtUtil;
+
+    private final RefreshRepository refreshRepository;
 
     @Override
     public Authentication attemptAuthentication( // 로그인 시도가 발생하면 실행되는 메소드
@@ -72,6 +77,9 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter { // 이 �
         String access = jwtUtil.createJwt("access", username, role, 600000L); // 생명 주기 : 10분
         String refresh = jwtUtil.createJwt("refresh", username, role, 86400000L);  // 생명 주기 : 24시간
 
+        // RefreshToken 저장
+        addRefreshEntity(username, refresh);
+
         // AccessToken은 응답 헤더에 담아서 클라이언트에게 전달, 프론트에서 로컬 스토리지에 저장
         // RefreshToken은 쿠키에 저장
         response.addHeader("Authorization", "Bearer " + access);
@@ -83,6 +91,15 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter { // 이 �
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) {
         response.setStatus(401);
+    }
+
+    private void addRefreshEntity(String username, String refresh) {
+
+        RefreshEntity refreshEntity = new RefreshEntity();
+        refreshEntity.setUsername(username);
+        refreshEntity.setRefresh(refresh);
+
+        refreshRepository.save(refreshEntity);
     }
 
     private Cookie createCookie(String key, String value) {

@@ -1,25 +1,29 @@
 package com.example.springjwt.controller;
 
+import com.example.springjwt.entity.RefreshEntity;
 import com.example.springjwt.jwt.JWTUtil;
+import com.example.springjwt.repository.RefreshRepository;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.util.Date;
+
 @Controller
 @ResponseBody
+@RequiredArgsConstructor
 public class ReissueController {
 
     private final JWTUtil jwtUtil;
 
-    public ReissueController(JWTUtil jwtUtil) {
-        this.jwtUtil = jwtUtil;
-    }
+    private final RefreshRepository refreshRepository;
 
     @PostMapping("/reissue")
     public ResponseEntity<?> reissue(HttpServletRequest request, HttpServletResponse response) {
@@ -59,6 +63,14 @@ public class ReissueController {
             return new ResponseEntity<>("invalid refresh token", HttpStatus.BAD_REQUEST);
         }
 
+        //Redis에 저장되어 있는지 확인
+        Boolean isExist = refreshRepository.existsById(refresh);
+        if (!isExist) {
+
+            //response body
+            return new ResponseEntity<>("invalid refresh token", HttpStatus.BAD_REQUEST);
+        }
+
         String username = jwtUtil.getUsername(refresh);
         String role = jwtUtil.getRole(refresh);
 
@@ -66,12 +78,25 @@ public class ReissueController {
         String newAccess = jwtUtil.createJwt("access", username, role, 600000L);
         String newRefresh = jwtUtil.createJwt("refresh", username, role, 86400000L);
 
+        //Refresh 토큰을 저장하는 Redis에서 기존의 Refresh 토큰 삭제 후 새 Refresh 토큰 저장
+        refreshRepository.deleteById(refresh);
+        addRefreshEntity(username, newRefresh);
+
         // AccessToken은 응답 헤더에 담아서 클라이언트에게 전달
         response.addHeader("Authorization", "Bearer " + newAccess);
         // RefreshToken은 쿠키에 저장
         response.addCookie(createCookie("refresh", newRefresh));
 
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    private void addRefreshEntity(String username, String refresh) {
+
+        RefreshEntity refreshEntity = new RefreshEntity();
+        refreshEntity.setUsername(username);
+        refreshEntity.setRefresh(refresh);
+
+        refreshRepository.save(refreshEntity);
     }
 
     private Cookie createCookie(String key, String value) {
