@@ -1,5 +1,6 @@
 package com.example.springjwt.config;
 
+import com.example.springjwt.jwt.CustomLogoutFilter;
 import com.example.springjwt.jwt.JWTFilter;
 import com.example.springjwt.jwt.JWTUtil;
 import com.example.springjwt.jwt.LoginFilter;
@@ -16,6 +17,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
@@ -92,6 +94,8 @@ public class SecurityConfig {
         // LoginFilter는 인증 처리를 위해 AuthenticationManager를 사용하며, 이 매니저는 사용자 인증을 담당하는 객체
         // AuthenticationManager는 UserDetailsService와 PasswordEncoder 등 인증에 필요한 설정을 포함하고 있으므로, 이를 생성자에 전달하여 필터가 인증을 처리할 수 있도록 설정
         http.addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, refreshRepository), UsernamePasswordAuthenticationFilter.class);
+
+        http.addFilterBefore(new CustomLogoutFilter(jwtUtil, refreshRepository), LogoutFilter.class);
 
         // 세션 설정
         http.sessionManagement((session) -> session
